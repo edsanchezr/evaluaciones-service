@@ -1,6 +1,7 @@
 package com.evaluaciones.ws.response;
 
-public class EstudianteResponse extends MetadataResponse {
+public class CalendarioResponse extends MetadataResponse {
+ 
 	private Long id;
 
 	public Long getId() {

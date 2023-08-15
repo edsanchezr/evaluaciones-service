@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,13 +16,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.evaluaciones.common.enums.ErroresEnum;
 import com.evaluaciones.common.exception.TransactionDataException;
+import com.evaluaciones.dao.CalendarioExamenDao;
 import com.evaluaciones.dao.ExamenDao;
+import com.evaluaciones.dao.HistorialRespuestasDao;
 import com.evaluaciones.dao.PreguntasDao;
 import com.evaluaciones.mapper.EvaluacionesMapper;
+import com.evaluaciones.mapper.ManualMapper;
+import com.evaluaciones.model.CalendarioExamenModel;
+import com.evaluaciones.model.EstudianteModel;
 import com.evaluaciones.model.ExamenModel;
 import com.evaluaciones.model.PreguntasExamenModel;
+import com.evaluaciones.model.RespuestasExamenModel;
 import com.evaluaciones.ws.request.ExamenRequest;
 import com.evaluaciones.ws.request.PreguntaExamenRequest;
+import com.evaluaciones.ws.request.RespuestaExamenRequest;
+import com.evaluaciones.ws.request.RespuestasExamenRequest;
+import com.evaluaciones.ws.response.EvaluacionResponse;
 import com.evaluaciones.ws.response.ExamenResponse;
 
 @Service
@@ -35,6 +45,14 @@ public class ExamenService {
 	private PreguntasDao preguntasDao;
 	@Autowired
 	private EvaluacionesMapper mapper;
+	@Autowired
+	private CalendarioExamenDao calendarioExamenDao;
+	@Autowired
+	private EstudianteService estudianteService;
+	@Autowired
+	private HistorialRespuestasDao historialRespuestasDao;
+	private CalendarioExamenModel calModel;
+	private EstudianteModel estModel;
 	
 	public ResponseEntity <ExamenResponse> crearExamen (ExamenRequest examenRequest) {
 		ExamenResponse response = new ExamenResponse ();
@@ -82,10 +100,87 @@ public class ExamenService {
 		}
 	}
 	
+	public ResponseEntity <EvaluacionResponse> evaluarExamen (RespuestasExamenRequest request) {
+		EvaluacionResponse response = new EvaluacionResponse();
+		boolean error = false;
+		HttpStatus status = null;
+		if (validCalendarioAndEstudiante(request)) {
+			log.info("Existen los datos...");
+			for (int i = 0; i < request.getRespuestas().size(); i ++) {
+				Optional <PreguntasExamenModel> preguntaModel = 
+						getRespuesta(request.getRespuestas().get(i).getPregunta());
+				if (preguntaModel.isPresent()) {
+					RespuestaExamenRequest respuesta = request.getRespuestas().get(i);
+					respuesta.setCorrecta(preguntaModel.get().getRespuesta());
+					respuesta.setPuntuacion(
+							(respuesta.getCorrecta().equals(respuesta.getRespuesta())
+									? preguntaModel.get().getPuntuacion() : BigDecimal.ZERO));
+					request.getRespuestas().set(i, respuesta);
+				} else {
+					log.info("No existe la pregunta...");
+					response
+						.setMetadata("Error", ErroresEnum.DOSENT_EXIST_PREGUNTA.getCode(), 
+								"No existe la pregunta: " + request.getRespuestas().get(i).getPregunta());
+					status = HttpStatus.NOT_FOUND;
+					error = true;
+					break;
+				}
+			}
+			
+			if (!error) {
+				log.info("Se recorrieron todas las preguntas");
+				List<RespuestasExamenModel> respuestasModel =
+						ManualMapper.respuestasRequestToRespuestasModel(request, estModel, calModel);
+				guardarHistorialPreguntas(respuestasModel);
+				
+				BigDecimal puntuacionFinal = new BigDecimal(respuestasModel
+						.stream()
+						.mapToDouble(l -> l.getPuntuacion().doubleValue())
+						.sum()).setScale(2, RoundingMode.HALF_DOWN);
+				response.setPuntuacion(puntuacionFinal);
+				response.setMetadata("Ok", "200", "Examen Registrado");
+				status = HttpStatus.OK;
+			}
+		} else {
+			log.info("No existe estudiante y calendario...");
+			response.setMetadata("Error", ErroresEnum.DOSENT_EXIST_CALENDAR.getCode(), "No existe el calendario");
+			status = HttpStatus.NOT_FOUND;
+		}
+		
+		return new ResponseEntity<EvaluacionResponse> (response, status);
+	}
+	
+	private boolean validCalendarioAndEstudiante (RespuestasExamenRequest request) {
+		log.info("Validacion estudiante y calendario...");
+		Optional <CalendarioExamenModel> calendario = 
+				calendarioExamenDao.findById(request.getCalendario());
+		Optional <EstudianteModel> estudiante = estudianteService.getEstudianteById(request.getEstudiante());
+		
+		if (calendario.isPresent() && estudiante.isPresent()) {
+			estModel = estudiante.get();
+			calModel = calendario.get();
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	@Transactional(readOnly = true)
 	public List<ExamenModel> getExamen (String versionExamen, Integer nivelExamen, boolean estatus) {
 		try {
 			return examenDao.findByVersionExamenAndNivelExamenAndEstatusExamen(versionExamen, nivelExamen, estatus);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new 
+			TransactionDataException(ErroresEnum.SELECT_ERROR.getCode(), 
+					"Error al consultar la existencia del examen", "GET-DATA");
+		}
+	}
+	
+	@Transactional(readOnly = true)
+	public Optional <ExamenModel> getExamenById (Long id) {
+		try {
+			return examenDao.findById(id);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new 
@@ -115,6 +210,30 @@ public class ExamenService {
 			throw new 
 			TransactionDataException(ErroresEnum.INSERT_ERROR.getCode(), 
 					"Error al guardar las preguntas del examen con ID: " + model.get(0).getExamen(), "SAVE-DATA");
+		}
+	}
+	
+	@Transactional(readOnly = true)
+	public Optional <PreguntasExamenModel> getRespuesta (Long id) {
+		try {
+			return preguntasDao.findById(id);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new 
+			TransactionDataException(ErroresEnum.SELECT_ERROR.getCode(), 
+					"Error al consultar la pregunta con ID: " + id, "GET-DATA");
+		}
+	}
+	
+	@Transactional
+	public void guardarHistorialPreguntas (List <RespuestasExamenModel> respuestas) {
+		try {
+			historialRespuestasDao.saveAll(respuestas);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new 
+			TransactionDataException(ErroresEnum.INSERT_ERROR.getCode(), 
+					"Error al almacenar las respuestas. ", "SAVE-DATA");
 		}
 	}
 }

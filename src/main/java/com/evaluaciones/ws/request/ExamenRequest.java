@@ -1,14 +1,23 @@
 package com.evaluaciones.ws.request;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ExamenRequest {
 	
 	private Long id;
+	
+	@JsonIgnore
 	private String version;
+	
+	@JsonIgnore
 	private Integer nivel;
+	
+	@JsonIgnore
 	private boolean estatus;
+	
+	@JsonIgnore
 	private List <PreguntaExamenRequest> preguntas;
 	
 	public Long getId() {

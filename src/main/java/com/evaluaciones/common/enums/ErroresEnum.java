@@ -8,7 +8,12 @@ public enum ErroresEnum {
 	EXIST_ESTUDENT("ERR-004", "Ya exise el estudiante"),
 	ID_NOT_GENERATE ("ERR-005", "ID no generado"),
 	EXIST_EXAMEN("ERR-006", "Ya exise el estudiante"),
-	PUNTUACION_ERROR("ERR-007", "No cumple la sumatoria de puntuacion");
+	PUNTUACION_ERROR("ERR-007", "No cumple la sumatoria de puntuacion"),
+	DOSENT_EXIST_CALENDAR ( "ERR-008", "No existe el calendario"),
+	DOSENT_EXIST_PREGUNTA ( "ERR-009", "No existe la pregunta"),
+	DOSENT_EXIST_EXAMEN ( "ERR-010", "No existe EL EXAMEN"),
+	DOSENT_EXIST_ESTUDIANTE ( "ERR-011", "No existe el estudiante"),
+	PARSE_ERROR ("ERR-012", "Error en concersion de valor");
 	
 	private final String code;
 	private final String description;

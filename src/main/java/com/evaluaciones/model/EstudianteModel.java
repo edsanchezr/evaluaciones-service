@@ -18,7 +18,7 @@ public class EstudianteModel implements Serializable {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column (name = "id_estudiante")
-	private Integer idEstudiante;
+	private Long idEstudiante;
 	@Column (name = "id_zona_horaria")
 	private int idZonaHoraria;
 	
@@ -29,10 +29,10 @@ public class EstudianteModel implements Serializable {
 	private String apellidoMaterno;
 	private boolean estatus;
 	
-	public Integer getIdEstudiante() {
+	public Long getIdEstudiante() {
 		return idEstudiante;
 	}
-	public void setIdEstudiante(Integer idEstudiante) {
+	public void setIdEstudiante(Long idEstudiante) {
 		this.idEstudiante = idEstudiante;
 	}
 	public int getIdZonaHoraria() {

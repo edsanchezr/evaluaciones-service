@@ -4,15 +4,18 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.stereotype.Component;
 
+import com.evaluaciones.model.CalendarioExamenModel;
 import com.evaluaciones.model.EstudianteModel;
 import com.evaluaciones.model.ExamenModel;
 import com.evaluaciones.model.PreguntasExamenModel;
+import com.evaluaciones.util.MapperUtil;
+import com.evaluaciones.ws.request.CalendarioExamenRequest;
 import com.evaluaciones.ws.request.EstudianteRequest;
 import com.evaluaciones.ws.request.ExamenRequest;
 import com.evaluaciones.ws.request.PreguntaExamenRequest;
 
 @Component
-@Mapper (componentModel = "spring")
+@Mapper (componentModel = "spring", uses = MapperUtil.class)
 public interface EvaluacionesMapper {
 
 	@Mapping (source = "zonaHoraria", target = "idZonaHoraria")
@@ -33,4 +36,8 @@ public interface EvaluacionesMapper {
 	ExamenRequest examenModelToExamenRequest (ExamenModel model);
 	
 	PreguntaExamenRequest preguntasExamenModelToPreguntasExamenRequest (PreguntasExamenModel model);
+	
+	@Mapping (source = "fechaExamen", target = "fechaExamen", 
+			qualifiedByName = "convertStringToDate")
+	CalendarioExamenModel calendarioRequestToCalendarioModel (CalendarioExamenRequest request);
 }

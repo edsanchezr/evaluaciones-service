@@ -83,6 +83,34 @@
 					</excludes>
 				</configuration>
 			</plugin>
+			<plugin>
+			   <groupId>org.jacoco</groupId>
+			   <artifactId>jacoco-maven-plugin</artifactId>
+			   <version>0.8.7</version>
+			   <configuration>
+				   <excludes>
+					   <exclude>**/model/**</exclude>
+					   <exclude>**/rs/request/**</exclude>
+					   <exclude>**/rs/response/**</exclude>
+				   </excludes>
+			   </configuration>
+			   <executions>
+			      <execution>
+			         <id>jacoco-initialize</id>
+			         <goals>
+			            <goal>prepare-agent</goal>
+			         </goals>
+			         <phase>test-compile</phase>
+			      </execution>
+			      <execution>
+			         <id>jacoco-site</id>
+			         <phase>verify</phase>
+			         <goals>
+			            <goal>report</goal>
+			         </goals>
+			      </execution>
+			   </executions>
+			</plugin>
 		</plugins>
 	</build>
 	<repositories>

@@ -1,6 +1,7 @@
 package com.evaluaciones.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -35,7 +36,7 @@ public class EstudianteService {
 			EstudianteModel estudianteModel = mapper.estudianteRequestToEstudianteModel(request);
 			EstudianteModel estudianteSaved = persistEstudiante(estudianteModel);
 			if (estudianteSaved.getIdEstudiante() != null 
-					&& estudianteSaved.getIdEstudiante() > 0) {
+					&& estudianteSaved.getIdEstudiante() != 0) {
 				response.setId(estudianteSaved.getIdEstudiante());
 				response.setMetadata("Ok", "200", "Estudiante Almacenado");
 				return new ResponseEntity<EstudianteResponse>(response, HttpStatus.OK);
@@ -76,6 +77,16 @@ public class EstudianteService {
 			throw new 
 			TransactionDataException(ErroresEnum.INSERT_ERROR.getCode(), 
 					"Error al almacenar la existencia del estudiante", "SAVE-DATA");
+		}
+	}
+	
+	public Optional<EstudianteModel> getEstudianteById (Long id) {
+		try {
+			return estudianteDao.findById(id);
+		} catch (Exception e) {
+			throw new 
+			TransactionDataException(ErroresEnum.SELECT_ERROR.getCode(), 
+					"Error al consultar la existencia del estudiante", "GET-DATA");
 		}
 	}
 }

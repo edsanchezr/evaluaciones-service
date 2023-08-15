@@ -2,7 +2,7 @@ package com.evaluaciones.ws.request;
 
 public class EstudianteRequest {
 	
-	private Integer idEstudiante;
+	private Long idEstudiante;
 	private String zonaHoraria;
 	private String nombre;
 	private String apellidoPaterno;
@@ -39,10 +39,10 @@ public class EstudianteRequest {
 	public void setEstatus(boolean estatus) {
 		this.estatus = estatus;
 	}
-	public Integer getIdEstudiante() {
+	public Long getIdEstudiante() {
 		return idEstudiante;
 	}
-	public void setIdEstudiante(Integer idEstudiante) {
+	public void setIdEstudiante(Long idEstudiante) {
 		this.idEstudiante = idEstudiante;
 	}
 }
